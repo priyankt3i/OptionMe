@@ -113,6 +113,15 @@ st.set_page_config(page_title='Investment Strategy Analyzer', layout='wide')
 # Sidebar inputs
 with st.sidebar:
     st.header('Investment Parameters')
+
+    # Add text box for Polygon.io API key input
+    api_key_input = st.text_input(
+        "Enter your Polygon.io API Key",
+        value=os.getenv('POLYGON_API_KEY') or '',
+        type="password",
+        help="Get your API key from https://polygon.io/dashboard/keys"
+    )
+
     investment_amount = st.slider(
         'Select Investment Amount',
         min_value=100,
