@@ -467,7 +467,7 @@ if not np.isnan(current_price):
 import matplotlib.pyplot as plt
 
 # Plot historical data and predicted growth for next 5 years
-if not historical_prices.empty:
+if 'historical_prices' in locals() and historical_prices is not None and not historical_prices.empty:
     st.subheader("Historical Price Data")
     st.line_chart(historical_prices)
 
@@ -476,8 +476,8 @@ if not historical_prices.empty:
     last_price = historical_prices.iloc[-1]
     predicted_prices = {}
 
-    if prediction_model == "Simple Growth":
-        growth_factors = [1.05, 1.10, 1.20, 1.50]
+    if prediction_model == "T3i Prediction Model":
+        growth_factors = [growth_rates.get(p, 1.0) for p in periods]
     elif prediction_model == "Historical Volatility":
         growth_factors = [growth_rates.get(p, 1.0) for p in periods]
     elif prediction_model == "ARIMA Forecasting":
