@@ -11,11 +11,10 @@ from models import disclaimer, monte_carlo_simulation, options_pricing, external
 load_dotenv() # Load environment variables from .env file
 
 @st.cache_data(ttl=300)
-def get_stock_data(ticker):
+def get_stock_data(ticker, api_key):
     """Fetches the latest price for a given stock ticker from Polygon.io (free endpoint)."""
-    api_key = os.getenv('POLYGON_API_KEY')
-    if not api_key or api_key == 'your_api_key_here':
-        st.error("POLYGON_API_KEY not found or not set in .env file. Please add your Polygon.io API key.")
+    if not api_key:
+        st.warning("Please enter your Polygon.io API key to fetch stock data.")
         return pd.DataFrame({'Date': [pd.Timestamp.now()], 'Price': [np.nan]})
 
     # Use free tier-compatible endpoint for previous day's closing price
@@ -121,6 +120,8 @@ with st.sidebar:
         type="password",
         help="Get your API key from https://polygon.io/dashboard/keys"
     )
+    if api_key_input:
+        os.environ['POLYGON_API_KEY'] = api_key_input
 
     investment_amount = st.slider(
         'Select Investment Amount',
@@ -253,13 +254,13 @@ with st.sidebar:
         
     with col2:
         # Get and display current stock price
-        stock_data = get_stock_data(stock)
-        if not stock_data['Price'].isnull().all():
-            current_price = stock_data['Price'].iloc[-1]
-            st.metric('Current Price', f'$ {current_price:.2f}')
-        else:
-            st.error("Failed to fetch current price. Check API status and key.")
-            current_price = np.nan
+        stock_data = get_stock_data(stock, api_key_input)
+    if stock_data is not None and not stock_data.empty and 'Price' in stock_data.columns and not stock_data['Price'].isnull().all():
+        current_price = stock_data['Price'].iloc[-1]
+        st.metric('Current Price', f'$ {current_price:.2f}')
+    else:
+        st.error("Failed to fetch current price. Check API status and key.")
+        current_price = np.nan
 
     # Covered Call parameters input UI inside main window after current_price is defined
     if options_strategy == "Covered Call" and not np.isnan(current_price):
@@ -279,7 +280,7 @@ with col1:
     
 with col2:
     # Get and display current stock price
-    stock_data = get_stock_data(stock)
+    stock_data = get_stock_data(stock, api_key_input)
     if not stock_data['Price'].isnull().all():
         current_price = stock_data['Price'].iloc[-1]
         st.metric('Current Price', f'$ {current_price:.2f}')
@@ -288,23 +289,20 @@ with col2:
         current_price = np.nan
 
 # Calculate and display outcomes only if current_price is valid
-if not np.isnan(current_price):
+if api_key_input:
     import pandas as pd
     from models import historical_data_analysis, arima_forecasting
 
-    # Fetch historical price data for the selected stock (simplified example)
-    # In real app, fetch from Polygon.io or other data source
+    # Fetch historical price data for the selected stock (real data from Polygon.io)
     @st.cache_data(ttl=300)
-    def fetch_historical_prices(ticker):
-        # Fetch historical prices from Polygon.io API with rate limit handling
+    def fetch_historical_prices(ticker, api_key):
         import os
         import requests
         import pandas as pd
         import time
 
-        api_key = os.getenv('POLYGON_API_KEY')
-        if not api_key or api_key == 'your_api_key_here':
-            st.error("POLYGON_API_KEY not found or not set in .env file. Please add your Polygon.io API key.")
+        if not api_key:
+            st.warning("Please enter your Polygon.io API key to fetch historical prices.")
             return pd.Series(dtype=float)
 
         url = f'https://api.polygon.io/v2/aggs/ticker/{ticker}/range/1/day/2010-01-01/{pd.Timestamp.today().date()}?adjusted=true&sort=asc&limit=50000&apiKey={api_key}'
@@ -340,7 +338,7 @@ if not np.isnan(current_price):
         st.error("Exceeded maximum retries due to rate limiting.")
         return pd.Series(dtype=float)
 
-    historical_prices = fetch_historical_prices(stock)
+    historical_prices = fetch_historical_prices(stock, api_key_input)
 
     periods_days = {
         '3 Months': 63,
