@@ -118,7 +118,20 @@ with st.sidebar:
         "Enter your Polygon.io API Key",
         value=os.getenv('POLYGON_API_KEY') or '',
         type="password",
-        help="Get your API key from https://polygon.io/dashboard/keys"
+        help="Get your API key from https://polygon.io/dashboard/keys",
+        disabled=True,
+        label_visibility= "hidden"
+    )
+
+    st.markdown(
+    """
+    <style>
+        [title="Show password text"] {
+            display: none;
+        }
+    </style>
+    """,
+        unsafe_allow_html=True,
     )
     if api_key_input:
         os.environ['POLYGON_API_KEY'] = api_key_input
@@ -245,7 +258,7 @@ with st.sidebar:
         explanation_text = explanations.get(options_strategy, "Select an options trading strategy to see its explanation.")
         st.markdown(f"**Strategy Explanation:** {explanation_text}")
 
-    # Main window
+    # Sidebar window
     st.title('Investment Strategy Analyzer')
     st.subheader('Selected Investment Parameters')
     col1, col2 = st.columns(2)
@@ -273,23 +286,7 @@ with st.sidebar:
 
 # Main window
 st.title('Investment Strategy Analyzer')
-st.subheader('Selected Investment Parameters')
-col1, col2 = st.columns(2)
-with col1:
-    st.metric('Investment Amount', f'$ {investment_amount}')
-    st.metric('Selected Stock', stock)
-    st.metric('Investment Type', investment_type)
-    
-with col2:
-    # Get and display current stock price
-    stock_data = get_stock_data(stock, api_key_input)
-    if not stock_data['Price'].isnull().all():
-        current_price = stock_data['Price'].iloc[-1]
-        st.metric('Current Price', f'$ {current_price:.2f}')
-    else:
-        st.error("Failed to fetch current price. Check API status and key.")
-        current_price = np.nan
-
+st.markdown("---")
 # Calculate and display outcomes only if current_price is valid
 if api_key_input:
     import pandas as pd
@@ -463,8 +460,6 @@ if api_key_input:
         # Display Return % row
         for col, val in zip(cols, returns):
             col.metric("Return %", f"{val:.2f}%")
-
-import matplotlib.pyplot as plt
 
 # Plot historical data and predicted growth for next 5 years
 if 'historical_prices' in locals() and historical_prices is not None and not historical_prices.empty:
