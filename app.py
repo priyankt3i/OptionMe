@@ -122,6 +122,8 @@ with st.sidebar:
     )
     if api_key_input:
         os.environ['POLYGON_API_KEY'] = api_key_input
+    else:
+        st.error("POLYGON_API_KEY not found or not set in .env file. Please add your Polygon.io API key.")
 
     investment_amount = st.slider(
         'Select Investment Amount',
